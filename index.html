@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte Interactive de Rennes</title>
+    <title>Énergisons Rennes - Carte Interactive</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -32,19 +32,24 @@
         }
 
         .header {
-            padding: 20px;
-            background: #2c3e50;
+            padding: 15px 20px;
+            background: #1a1b41; /* Couleur proche du visuel Nouvelle Énergie */
             color: white;
+            text-align: center;
         }
 
-        .header h1 {
-            font-size: 1.4rem;
-            margin-bottom: 4px;
+        .header img {
+            max-height: 55px;
+            width: auto;
+            margin-bottom: 8px;
+            object-fit: contain;
         }
 
         .header p {
-            font-size: 0.85rem;
-            opacity: 0.8;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #dcdde1;
         }
 
         .controls {
@@ -253,9 +258,10 @@
 
     <!-- Sidebar -->
     <div id="sidebar">
+        <!-- En-tête personnalisé avec le logo -->
         <div class="header">
-            <h1>📍 Carte de Rennes</h1>
-            <p>Coloriez la ville & gérez vos panneaux !</p>
+            <img src="logo.png" alt="Logo Nouvelle Énergie">
+            <p>Énergisons Rennes</p>
         </div>
 
         <div class="controls">
@@ -395,7 +401,7 @@
                 lng: latlng.lng,
                 msg: msg,
                 dateAdded: new Date().toLocaleDateString('fr-FR'),
-                colleUntil: null // Timestamp de fin de validité (15 jours)
+                colleUntil: null
             };
 
             pingsData.push(pingObj);
@@ -538,7 +544,6 @@
                 `;
                 list.appendChild(card);
 
-                // Mettre à jour l'icône sur la carte avec la bonne couleur
                 renderPingMarker(ping);
             });
         }
