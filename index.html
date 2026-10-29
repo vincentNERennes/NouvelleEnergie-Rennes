@@ -258,6 +258,16 @@
             color: #f39c12;
             font-weight: normal;
         }
+
+        /* Style pour les images de marqueurs sur la carte */
+        .marker-icon-img {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
@@ -459,7 +469,7 @@
 
         function getStatusInfo(ping) {
             if (!ping.colleUntil) {
-                return { status: 'none', label: '⚪ Non validé', cardClass: '' };
+                return { status: 'expired', label: '⚠️ À recoller (Non validé)', cardClass: 'status-expired', img: 'pouting-lisnard.png' };
             }
             const now = Date.now();
             const diffMs = ping.colleUntil - now;
@@ -467,9 +477,9 @@
             if (diffMs > 0) {
                 const daysLeft = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                 const hoursLeft = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                return { status: 'valid', label: `✅ Affiche collée (${daysLeft}j ${hoursLeft}h restants)`, cardClass: 'status-valid' };
+                return { status: 'valid', label: `✅ Affiche collée (${daysLeft}j ${hoursLeft}h restants)`, cardClass: 'status-valid', img: 'smiling-lisnard.png' };
             } else {
-                return { status: 'expired', label: '⚠️ À recoller (Expiré)', cardClass: 'status-expired' };
+                return { status: 'expired', label: '⚠️ À recoller (Expiré)', cardClass: 'status-expired', img: 'pouting-lisnard.png' };
             }
         }
 
@@ -505,12 +515,10 @@
 
             pingsData.forEach(ping => {
                 const statusInfo = getStatusInfo(ping);
-                let bgColor = '#3498db';
-                if (statusInfo.status === 'valid') bgColor = '#2ecc71';
-                if (statusInfo.status === 'expired') bgColor = '#e74c3c';
-
-                const iconHtml = `<div style="background:${bgColor}; width:32px; height:32px; border-radius:50%; text-align:center; line-height:32px; font-size:16px; color:white; box-shadow:0 2px 6px rgba(0,0,0,0.3); border:2px solid white;">🪧</div>`;
-                const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [32, 32] });
+                
+                // Utilisation des images smiling-lisnard ou pouting-lisnard
+                const iconHtml = `<img src="${statusInfo.img}" class="marker-icon-img" alt="Panneau">`;
+                const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [38, 38], iconAnchor: [19, 19] });
 
                 const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
                 marker.bindPopup(buildPopupHtml(ping));
