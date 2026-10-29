@@ -33,7 +33,7 @@
 
         .header {
             padding: 15px 20px;
-            background: #1a1b41; /* Couleur proche du visuel Nouvelle Énergie */
+            background: #1a1b41;
             color: white;
             text-align: center;
         }
@@ -80,7 +80,6 @@
             color: white;
         }
 
-        /* Tool Options */
         .tool-panel {
             display: none;
         }
@@ -125,7 +124,6 @@
             font-family: inherit;
         }
 
-        /* Bulletin Board List */
         .board-container {
             flex: 1;
             padding: 20px;
@@ -138,6 +136,9 @@
             font-weight: bold;
             color: #333;
             margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .ping-card {
@@ -237,7 +238,6 @@
             background: #c0392b;
         }
 
-        /* Map Container */
         #map {
             flex: 1;
             width: 100%;
@@ -252,13 +252,17 @@
             margin-bottom: 8px;
             font-size: 0.9rem;
         }
+
+        .sync-loader {
+            font-size: 0.75rem;
+            color: #f39c12;
+            font-weight: normal;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div id="sidebar">
-        <!-- En-tête personnalisé avec le logo -->
         <div class="header">
             <img src="logo.png" alt="Logo Nouvelle Énergie">
             <p>Énergisons Rennes</p>
@@ -270,7 +274,6 @@
                 <button class="btn-mode" onclick="setMode('ping')">📌 Poster panneau</button>
             </div>
 
-            <!-- Options Coloriage -->
             <div id="panel-draw" class="tool-panel active">
                 <label>Couleur du tracé :</label>
                 <div class="color-picker">
@@ -281,32 +284,34 @@
                     <div class="color-dot" style="background: #9b59b6;" onclick="setColor('#9b59b6', this)"></div>
                 </div>
                 <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">Cliquez sur 2 points de la carte pour tracer une ligne/rue.</p>
-                <button onclick="clearDrawings()" style="margin-top: 10px; padding: 6px 12px; font-size: 0.8rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">Effacer mes tracés</button>
+                <button onclick="clearDrawings()" style="margin-top: 10px; padding: 6px 12px; font-size: 0.8rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">Effacer tous les tracés</button>
             </div>
 
-            <!-- Options Panneau -->
             <div id="panel-ping" class="tool-panel">
                 <label for="ping-msg">Nom / Message du panneau :</label>
                 <textarea id="ping-msg" rows="3" placeholder="Écrivez le nom ou le message du panneau, puis cliquez sur la carte..."></textarea>
             </div>
         </div>
 
-        <!-- Liste des panneaux -->
         <div class="board-container">
-            <div class="board-title">📋 Liste des panneaux</div>
+            <div class="board-title">
+                <span>📋 Liste des panneaux</span>
+                <span id="sync-status" class="sync-loader">🔄 Sync...</span>
+            </div>
             <div id="board-list"></div>
         </div>
     </div>
 
-    <!-- Map -->
     <div id="map"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        const BIN_ID = "6ae3ce5bffd5d16053971b9e";
+        const API_KEY = "$2a$10$CgKC3W5/qiItbMUXH6igROL45Kq7W1XE33Mpx7VIplJ87fKCP9Csa";
+
         const DURATION_15_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
 
-        // Initialisation de la carte sur Rennes
         const map = L.map('map').setView([48.117266, -1.677792], 14);
 
         const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
@@ -320,20 +325,17 @@
         });
 
         osmFr.addTo(map);
-
-        L.control.layers({
-            "OpenStreetMap Fr": osmFr,
-            "Esri Street": esriStreet
-        }).addTo(map);
+        L.control.layers({ "OpenStreetMap Fr": osmFr, "Esri Street": esriStreet }).addTo(map);
 
         let currentMode = 'draw';
         let currentColor = '#e74c3c';
         let isDrawing = false;
         let currentPolyline = null;
         
-        let pingsData = JSON.parse(localStorage.getItem('rennes_pings')) || [];
-        let drawingsData = JSON.parse(localStorage.getItem('rennes_drawings')) || [];
+        let pingsData = [];
+        let drawingsData = [];
         let markersMap = {};
+        let polylinesList = [];
 
         function setMode(mode) {
             currentMode = mode;
@@ -369,27 +371,58 @@
                 currentPolyline = L.polyline([latlng], { color: currentColor, weight: 6, opacity: 0.8 }).addTo(map);
             } else {
                 currentPolyline.addLatLng(latlng);
-                saveDrawing(currentPolyline.getLatLngs(), currentColor);
+                drawingsData.push({ latlngs: currentPolyline.getLatLngs(), color: currentColor });
+                saveToCloud();
                 isDrawing = false;
                 currentPolyline = null;
             }
         }
 
-        function saveDrawing(latlngs, color) {
-            drawingsData.push({ latlngs, color });
-            localStorage.setItem('rennes_drawings', JSON.stringify(drawingsData));
-        }
-
         function clearDrawings() {
-            localStorage.removeItem('rennes_drawings');
-            location.reload();
+            if (confirm("Voulez-vous vraiment effacer tous les tracés partagés ?")) {
+                drawingsData = [];
+                saveToCloud();
+            }
         }
 
-        /* ----- GESTION DES PANNEAUX ----- */
+        async function fetchFromCloud() {
+            document.getElementById('sync-status').innerText = '🔄 Synchro...';
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': API_KEY }
+                });
+                const data = await res.json();
+                pingsData = data.record.pings || [];
+                drawingsData = data.record.drawings || [];
+                renderAllData();
+                document.getElementById('sync-status').innerText = '✅ À jour';
+            } catch (err) {
+                console.error("Erreur de synchronisation", err);
+                document.getElementById('sync-status').innerText = '⚠️ Erreur synchro';
+            }
+        }
+
+        async function saveToCloud() {
+            document.getElementById('sync-status').innerText = '⏳ Sauvegarde...';
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify({ pings: pingsData, drawings: drawingsData })
+                });
+                document.getElementById('sync-status').innerText = '✅ Sauvegardé';
+                renderAllData();
+            } catch (err) {
+                console.error("Erreur d'enregistrement", err);
+                document.getElementById('sync-status').innerText = '⚠️ Erreur sauvegarde';
+            }
+        }
 
         function addPing(latlng) {
             const msg = document.getElementById('ping-msg').value.trim();
-
             if (!msg) {
                 alert("Veuillez saisir un nom ou message pour le panneau.");
                 return;
@@ -405,27 +438,14 @@
             };
 
             pingsData.push(pingObj);
-            savePings();
-            
-            renderPingMarker(pingObj);
-            updateBoard();
+            saveToCloud();
             document.getElementById('ping-msg').value = '';
-        }
-
-        function savePings() {
-            localStorage.setItem('rennes_pings', JSON.stringify(pingsData));
         }
 
         function deletePing(id) {
             if (confirm("Voulez-vous vraiment supprimer ce panneau ?")) {
                 pingsData = pingsData.filter(p => p.id !== id);
-                savePings();
-                
-                if (markersMap[id]) {
-                    map.removeLayer(markersMap[id]);
-                    delete markersMap[id];
-                }
-                updateBoard();
+                saveToCloud();
             }
         }
 
@@ -433,17 +453,8 @@
             const ping = pingsData.find(p => p.id === id);
             if (ping) {
                 ping.colleUntil = Date.now() + DURATION_15_DAYS_MS;
-                savePings();
-                refreshPingDisplay(id);
+                saveToCloud();
             }
-        }
-
-        function refreshPingDisplay(id) {
-            const ping = pingsData.find(p => p.id === id);
-            if (ping && markersMap[id]) {
-                markersMap[id].setPopupContent(buildPopupHtml(ping));
-            }
-            updateBoard();
         }
 
         function getStatusInfo(ping) {
@@ -456,29 +467,17 @@
             if (diffMs > 0) {
                 const daysLeft = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                 const hoursLeft = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                return { 
-                    status: 'valid', 
-                    label: `✅ Affiche collée (${daysLeft}j ${hoursLeft}h restants)`, 
-                    cardClass: 'status-valid' 
-                };
+                return { status: 'valid', label: `✅ Affiche collée (${daysLeft}j ${hoursLeft}h restants)`, cardClass: 'status-valid' };
             } else {
-                return { 
-                    status: 'expired', 
-                    label: '⚠️ À recoller (Expiré)', 
-                    cardClass: 'status-expired' 
-                };
+                return { status: 'expired', label: '⚠️ À recoller (Expiré)', cardClass: 'status-expired' };
             }
         }
 
         function buildPopupHtml(ping) {
             const statusInfo = getStatusInfo(ping);
-            let actionBtn = '';
-            
-            if (statusInfo.status === 'valid') {
-                actionBtn = `<button class="btn-action btn-refresh" onclick="validateColle(${ping.id})">🔄 Relancer (+15j)</button>`;
-            } else {
-                actionBtn = `<button class="btn-action btn-colle" onclick="validateColle(${ping.id})">📌 Affiche collée</button>`;
-            }
+            let actionBtn = (statusInfo.status === 'valid') 
+                ? `<button class="btn-action btn-refresh" onclick="validateColle(${ping.id})">🔄 Relancer (+15j)</button>`
+                : `<button class="btn-action btn-colle" onclick="validateColle(${ping.id})">📌 Affiche collée</button>`;
 
             return `
                 <div class="popup-content">
@@ -492,25 +491,32 @@
             `;
         }
 
-        function renderPingMarker(ping) {
-            const statusInfo = getStatusInfo(ping);
-            let bgColor = '#3498db';
-            if (statusInfo.status === 'valid') bgColor = '#2ecc71';
-            if (statusInfo.status === 'expired') bgColor = '#e74c3c';
+        function renderAllData() {
+            Object.values(markersMap).forEach(m => map.removeLayer(m));
+            markersMap = {};
 
-            const iconHtml = `<div style="background:${bgColor}; width:32px; height:32px; border-radius:50%; text-align:center; line-height:32px; font-size:16px; color:white; box-shadow:0 2px 6px rgba(0,0,0,0.3); border:2px solid white;">🪧</div>`;
-            const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [32, 32] });
+            polylinesList.forEach(p => map.removeLayer(p));
+            polylinesList = [];
 
-            if (markersMap[ping.id]) {
-                map.removeLayer(markersMap[ping.id]);
-            }
+            drawingsData.forEach(d => {
+                const line = L.polyline(d.latlngs, { color: d.color, weight: 6, opacity: 0.8 }).addTo(map);
+                polylinesList.push(line);
+            });
 
-            const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
-            marker.bindPopup(buildPopupHtml(ping));
-            markersMap[ping.id] = marker;
-        }
+            pingsData.forEach(ping => {
+                const statusInfo = getStatusInfo(ping);
+                let bgColor = '#3498db';
+                if (statusInfo.status === 'valid') bgColor = '#2ecc71';
+                if (statusInfo.status === 'expired') bgColor = '#e74c3c';
 
-        function updateBoard() {
+                const iconHtml = `<div style="background:${bgColor}; width:32px; height:32px; border-radius:50%; text-align:center; line-height:32px; font-size:16px; color:white; box-shadow:0 2px 6px rgba(0,0,0,0.3); border:2px solid white;">🪧</div>`;
+                const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [32, 32] });
+
+                const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
+                marker.bindPopup(buildPopupHtml(ping));
+                markersMap[ping.id] = marker;
+            });
+
             const list = document.getElementById('board-list');
             list.innerHTML = '';
             
@@ -524,12 +530,9 @@
                 const card = document.createElement('div');
                 card.className = `ping-card ${statusInfo.cardClass}`;
                 
-                let actionBtnHtml = '';
-                if (statusInfo.status === 'valid') {
-                    actionBtnHtml = `<button class="btn-action btn-refresh" onclick="validateColle(${ping.id})">🔄 Relancer (+15j)</button>`;
-                } else {
-                    actionBtnHtml = `<button class="btn-action btn-colle" onclick="validateColle(${ping.id})">📌 Affiche collée</button>`;
-                }
+                let actionBtnHtml = (statusInfo.status === 'valid')
+                    ? `<button class="btn-action btn-refresh" onclick="validateColle(${ping.id})">🔄 Relancer (+15j)</button>`
+                    : `<button class="btn-action btn-colle" onclick="validateColle(${ping.id})">📌 Affiche collée</button>`;
 
                 card.innerHTML = `
                     <div class="ping-header">
@@ -543,20 +546,11 @@
                     </div>
                 `;
                 list.appendChild(card);
-
-                renderPingMarker(ping);
             });
         }
 
-        function loadSavedData() {
-            updateBoard();
-
-            drawingsData.forEach(d => {
-                L.polyline(d.latlngs, { color: d.color, weight: 6, opacity: 0.8 }).addTo(map);
-            });
-        }
-
-        loadSavedData();
+        fetchFromCloud();
+        setInterval(fetchFromCloud, 15000);
     </script>
 </body>
 </html>
