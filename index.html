@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Interactive de Rennes</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f4f6f9;
+        }
+
+        /* Sidebar Styles */
+        #sidebar {
+            width: 360px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .header {
+            padding: 20px;
+            background: #2c3e50;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .controls {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-mode {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-mode.active {
+            background: #3498db;
+            color: white;
+        }
+
+        /* Tool Options */
+        .tool-panel {
+            display: none;
+        }
+
+        .tool-panel.active {
+            display: block;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .color-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .color-dot.active {
+            border-color: #333;
+            transform: scale(1.15);
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #444;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        /* Bulletin Board List */
+        .board-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+
+        .board-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .ping-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 5px solid #3498db;
+        }
+
+        .ping-card .ping-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #777;
+            margin-bottom: 5px;
+        }
+
+        .ping-card .ping-type {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .ping-card p {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        /* Map Container */
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+
+        /* Custom Leaflet Markers */
+        .custom-ping {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="header">
+            <h1>📍 Carte de Rennes</h1>
+            <p>Coloriez la ville & partagez vos pings !</p>
+        </div>
+
+        <div class="controls">
+            <div class="mode-selector">
+                <button class="btn-mode active" onclick="setMode('draw')">🖌️ Colorier</button>
+                <button class="btn-mode" onclick="setMode('ping')">📌 Poster Ping</button>
+            </div>
+
+            <!-- Options Coloriage -->
+            <div id="panel-draw" class="tool-panel active">
+                <label>Couleur du tracé :</label>
+                <div class="color-picker">
+                    <div class="color-dot active" style="background: #e74c3c;" onclick="setColor('#e74c3c', this)"></div>
+                    <div class="color-dot" style="background: #3498db;" onclick="setColor('#3498db', this)"></div>
+                    <div class="color-dot" style="background: #2ecc71;" onclick="setColor('#2ecc71', this)"></div>
+                    <div class="color-dot" style="background: #f1c40f;" onclick="setColor('#f1c40f', this)"></div>
+                    <div class="color-dot" style="background: #9b59b6;" onclick="setColor('#9b59b6', this)"></div>
+                </div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">Cliquez sur la carte pour dessiner une ligne/rue.</p>
+                <button onclick="clearDrawings()" style="margin-top: 10px; padding: 6px 12px; font-size: 0.8rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">Effacer mes tracés</button>
+            </div>
+
+            <!-- Options Ping -->
+            <div id="panel-ping" class="tool-panel">
+                <label for="ping-type">Catégorie :</label>
+                <select id="ping-type">
+                    <option value="💡 Idée">💡 Idée</option>
+                    <option value="⚠️ Signalement">⚠️ Signalement</option>
+                    <option value="❤️ Coup de cœur">❤️ Coup de cœur</option>
+                    <option value="🎉 Événement">🎉 Événement</option>
+                </select>
+
+                <label for="ping-msg">Message / Remarque :</label>
+                <textarea id="ping-msg" rows="3" placeholder="Écrivez un message ici puis cliquez sur la carte..."></textarea>
+            </div>
+        </div>
+
+        <!-- Tableau d'affichage -->
+        <div class="board-container">
+            <div class="board-title">📋 Tableau d'affichage</div>
+            <div id="board-list">
+                <!-- Les messages s'afficheront ici -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialisation de la carte centrée sur Rennes
+        const map = L.map('map').setView([48.117266, -1.677792], 14);
+
+        // Couches de carte gratuites sans clé API
+        const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+            maxZoom: 20,
+            attribution: '&copy; OpenStreetMap France'
+        });
+
+        const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri
