@@ -162,10 +162,11 @@
             color: #333;
         }
 
-        /* Map Container */
+        /* Map Container corrigé pour s'afficher correctement */
         #map {
             flex: 1;
-            height: 100%;
+            width: 100%;
+            height: 100vh;
         }
 
         /* Custom Leaflet Markers */
@@ -250,4 +251,142 @@
 
         const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 19,
-            attribution: 'Tiles &copy; Esri
+            attribution: 'Tiles &copy; Esri'
+        });
+
+        osmFr.addTo(map);
+
+        // Sélecteur de fond de carte
+        L.control.layers({
+            "OpenStreetMap Fr": osmFr,
+            "Esri Street": esriStreet
+        }).addTo(map);
+
+        // Variables d'état
+        let currentMode = 'draw';
+        let currentColor = '#e74c3c';
+        let isDrawing = false;
+        let currentPolyline = null;
+        let pingsData = JSON.parse(localStorage.getItem('rennes_pings')) || [];
+        let drawingsData = JSON.parse(localStorage.getItem('rennes_drawings')) || [];
+
+        // Gestion des modes
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+
+            if(mode === 'draw') {
+                document.querySelectorAll('.btn-mode')[0].classList.add('active');
+                document.getElementById('panel-draw').classList.add('active');
+            } else {
+                document.querySelectorAll('.btn-mode')[1].classList.add('active');
+                document.getElementById('panel-ping').classList.add('active');
+            }
+        }
+
+        function setColor(color, element) {
+            currentColor = color;
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // Clic sur la carte
+        map.on('click', function(e) {
+            if (currentMode === 'ping') {
+                addPing(e.latlng);
+            } else if (currentMode === 'draw') {
+                handleDrawing(e.latlng);
+            }
+        });
+
+        // Gestion du coloriage (Lignes)
+        function handleDrawing(latlng) {
+            if (!isDrawing) {
+                isDrawing = true;
+                currentPolyline = L.polyline([latlng], { color: currentColor, weight: 6, opacity: 0.8 }).addTo(map);
+            } else {
+                currentPolyline.addLatLng(latlng);
+                saveDrawing(currentPolyline.getLatLngs(), currentColor);
+                isDrawing = false;
+                currentPolyline = null;
+            }
+        }
+
+        function saveDrawing(latlngs, color) {
+            drawingsData.push({ latlngs, color });
+            localStorage.setItem('rennes_drawings', JSON.stringify(drawingsData));
+        }
+
+        function clearDrawings() {
+            localStorage.removeItem('rennes_drawings');
+            location.reload();
+        }
+
+        // Gestion des Pings
+        function addPing(latlng) {
+            const type = document.getElementById('ping-type').value;
+            const msg = document.getElementById('ping-msg').value.trim();
+
+            if (!msg) {
+                alert("Veuillez saisir un message avant de cliquer sur la carte.");
+                return;
+            }
+
+            const pingObj = {
+                id: Date.now(),
+                lat: latlng.lat,
+                lng: latlng.lng,
+                type: type,
+                msg: msg,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            pingsData.push(pingObj);
+            localStorage.setItem('rennes_pings', JSON.stringify(pingsData));
+            
+            renderPingMarker(pingObj);
+            updateBoard();
+            document.getElementById('ping-msg').value = '';
+        }
+
+        function renderPingMarker(ping) {
+            const iconHtml = `<div class="custom-ping" style="background:#2c3e50; width:30px; height:30px; border-radius:50%; text-align:center; line-height:30px; font-size:14px;">📍</div>`;
+            const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [30, 30] });
+
+            const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
+            marker.bindPopup(`<b>${ping.type}</b><br>${ping.msg}`);
+        }
+
+        function updateBoard() {
+            const list = document.getElementById('board-list');
+            list.innerHTML = '';
+            
+            pingsData.slice().reverse().forEach(ping => {
+                const card = document.createElement('div');
+                card.className = 'ping-card';
+                card.innerHTML = `
+                    <div class="ping-header">
+                        <span class="ping-type">${ping.type}</span>
+                        <span>${ping.date}</span>
+                    </div>
+                    <p>${ping.msg}</p>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // Chargement initial des données enregistrées en local
+        function loadSavedData() {
+            pingsData.forEach(ping => renderPingMarker(ping));
+            updateBoard();
+
+            drawingsData.forEach(d => {
+                L.polyline(d.latlngs, { color: d.color, weight: 6, opacity: 0.8 }).addTo(map);
+            });
+        }
+
+        loadSavedData();
+    </script>
+</body>
+</html>
