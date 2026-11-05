@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Énergisons Rennes - Carte Interactive</title>
+    <title>Signalements Rennes - Citoyens & Admin</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -23,7 +23,7 @@
 
         /* Sidebar Styles */
         #sidebar {
-            width: 380px;
+            width: 420px;
             background: #ffffff;
             display: flex;
             flex-direction: column;
@@ -33,171 +33,117 @@
 
         .header {
             padding: 15px 20px;
-            background: #1a1b41;
+            background: #2c3e50;
             color: white;
             text-align: center;
         }
 
-        .header img {
-            max-height: 55px;
-            width: auto;
-            margin-bottom: 8px;
-            object-fit: contain;
+        .header h1 {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
         }
 
         .header p {
-            font-size: 0.95rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            color: #dcdde1;
+            font-size: 0.85rem;
+            color: #bdc3c7;
         }
 
-        .controls {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .mode-selector {
+        .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            background: #34495e;
         }
 
-        .btn-mode {
+        .tab-btn {
             flex: 1;
             padding: 10px;
-            border: 2px solid #3498db;
-            background: white;
-            color: #3498db;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-mode.active {
-            background: #3498db;
+            background: none;
+            border: none;
             color: white;
-        }
-
-        .tool-panel {
-            display: none;
-        }
-
-        .tool-panel.active {
-            display: block;
-        }
-
-        .color-picker {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .color-dot {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            font-weight: bold;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: transform 0.2s;
+            font-size: 0.9rem;
+            transition: background 0.2s;
         }
 
-        .color-dot.active {
-            border-color: #333;
-            transform: scale(1.15);
+        .tab-btn.active {
+            background: #2980b9;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
         }
 
         label {
             font-size: 0.9rem;
             font-weight: 600;
-            color: #444;
+            color: #333;
+            margin-bottom: 6px;
+            display: block;
         }
 
-        textarea {
+        input[type="text"], input[type="password"], textarea, input[type="file"] {
             width: 100%;
             padding: 10px;
-            margin-top: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-family: inherit;
         }
 
-        .board-container {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #fafafa;
-        }
-
-        .board-title {
-            font-size: 1.1rem;
+        .btn-primary {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
             font-weight: bold;
-            color: #333;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
         }
 
-        .ping-card {
+        .btn-primary:hover {
+            background: #2471a3;
+        }
+
+        /* Liste des signalements */
+        .signal-card {
             background: white;
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 12px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-            border-left: 5px solid #3498db;
-            position: relative;
+            border-left: 5px solid #f39c12;
         }
 
-        .ping-card.status-valid {
-            border-left-color: #2ecc71;
+        .signal-card.validated {
+            border-left-color: #27ae60;
         }
 
-        .ping-card.status-expired {
-            border-left-color: #e74c3c;
+        .signal-card.resolved {
+            border-left-color: #2980b9;
         }
 
-        .ping-card .ping-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-            color: #777;
-            margin-bottom: 6px;
-        }
-
-        .ping-card p {
-            font-size: 0.95rem;
-            color: #333;
-            margin-bottom: 10px;
-            word-break: break-word;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            font-size: 0.75rem;
+        .signal-card img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
             border-radius: 4px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .status-badge.valid {
-            background: #e8f8f5;
-            color: #27ae60;
-        }
-
-        .status-badge.expired {
-            background: #fadbd8;
-            color: #c0392b;
+            margin-top: 8px;
         }
 
         .card-actions {
             display: flex;
             gap: 6px;
-            margin-top: 8px;
+            margin-top: 10px;
         }
 
         .btn-action {
@@ -207,36 +153,12 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        .btn-colle {
-            background: #2ecc71;
             color: white;
         }
 
-        .btn-colle:hover {
-            background: #27ae60;
-        }
-
-        .btn-refresh {
-            background: #3498db;
-            color: white;
-        }
-
-        .btn-refresh:hover {
-            background: #2980b9;
-        }
-
-        .btn-delete {
-            background: #e74c3c;
-            color: white;
-            margin-left: auto;
-        }
-
-        .btn-delete:hover {
-            background: #c0392b;
-        }
+        .btn-validate { background: #27ae60; }
+        .btn-resolve { background: #2980b9; }
+        .btn-delete { background: #c0392b; margin-left: auto; }
 
         #map {
             flex: 1;
@@ -244,28 +166,32 @@
             height: 100vh;
         }
 
-        .popup-content {
-            font-family: inherit;
-        }
-
-        .popup-content p {
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .sync-loader {
+        .sync-status {
             font-size: 0.75rem;
-            color: #f39c12;
-            font-weight: normal;
+            color: #f1c40f;
+            text-align: center;
+            padding: 5px;
+            background: #1a252f;
         }
 
-        .marker-icon-img {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
+        .popup-img-container {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .popup-img-container div {
+            flex: 1;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        .popup-img-container img {
+            width: 100%;
+            height: 90px;
             object-fit: cover;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -273,41 +199,44 @@
 
     <div id="sidebar">
         <div class="header">
-            <img src="logo.png" alt="Logo Nouvelle Énergie">
-            <p>Énergisons Rennes</p>
+            <h1>🏙️ Signalements Rennes</h1>
+            <p>Améliorons notre cadre de vie ensemble</p>
+        </div>
+        <div id="sync-status" class="sync-status">🔄 Connexion...</div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('citizen')">📢 Signaler</button>
+            <button class="tab-btn" onclick="switchTab('admin')">🔒 Admin</button>
         </div>
 
-        <div class="controls">
-            <div class="mode-selector">
-                <button class="btn-mode active" onclick="setMode('draw')">🖌️ Colorier</button>
-                <button class="btn-mode" onclick="setMode('ping')">📌 Poster panneau</button>
-            </div>
+        <!-- Onglet Citoyen -->
+        <div id="tab-citizen" class="tab-content active">
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
+                Vous avez repéré un tag, un mobilier urbain dégradé ou un dysfonctionnement ? Remplissez le formulaire puis <b>cliquez sur l'emplacement exact sur la carte</b>.
+            </p>
+            <label for="sig-desc">Description du problème :</label>
+            <textarea id="sig-desc" rows="3" placeholder="Ex: Tag injurieux sur mur, abribus cassé..."></textarea>
 
-            <div id="panel-draw" class="tool-panel active">
-                <label>Couleur du tracé :</label>
-                <div class="color-picker">
-                    <div class="color-dot active" style="background: #e74c3c;" onclick="setColor('#e74c3c', this)"></div>
-                    <div class="color-dot" style="background: #3498db;" onclick="setColor('#3498db', this)"></div>
-                    <div class="color-dot" style="background: #2ecc71;" onclick="setColor('#2ecc71', this)"></div>
-                    <div class="color-dot" style="background: #f1c40f;" onclick="setColor('#f1c40f', this)"></div>
-                    <div class="color-dot" style="background: #9b59b6;" onclick="setColor('#9b59b6', this)"></div>
-                </div>
-                <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">Cliquez sur 2 points de la carte pour tracer une ligne/rue.</p>
-                <button onclick="clearDrawings()" style="margin-top: 10px; padding: 6px 12px; font-size: 0.8rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">Effacer tous les tracés</button>
-            </div>
+            <label for="sig-photo">Photo du problème :</label>
+            <input type="file" id="sig-photo" accept="image/*">
 
-            <div id="panel-ping" class="tool-panel">
-                <label for="ping-msg">Nom / Message du panneau :</label>
-                <textarea id="ping-msg" rows="3" placeholder="Écrivez le nom ou le message du panneau, puis cliquez sur la carte..."></textarea>
+            <div style="background: #e8f8f5; padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #16a085; margin-top: 10px;">
+                ℹ️ Votre signalement sera soumis à validation avant d'apparaître publiquement sur la carte.
             </div>
         </div>
 
-        <div class="board-container">
-            <div class="board-title">
-                <span>📋 Liste des panneaux</span>
-                <span id="sync-status" class="sync-loader">🔄 Sync...</span>
+        <!-- Onglet Admin -->
+        <div id="tab-admin" class="tab-content">
+            <div id="admin-login">
+                <label for="admin-pass">Mot de passe administrateur :</label>
+                <input type="password" id="admin-pass" placeholder="Entrez le mot de passe">
+                <button class="btn-primary" onclick="checkAdmin()">Se connecter</button>
             </div>
-            <div id="board-list"></div>
+
+            <div id="admin-panel" style="display:none;">
+                <h3 style="font-size: 1rem; margin-bottom: 10px; color: #2c3e50;">Modération des signalements</h3>
+                <div id="admin-list"></div>
+            </div>
         </div>
     </div>
 
@@ -318,81 +247,102 @@
     <script>
         const BIN_ID = "6ae3ce5bffd5d16053971b9e";
         const API_KEY = "$2a$10$CgKC3W5/qiItbMUXH6igROL45Kq7W1XE33Mpx7VIplJ87fKCP9Csa";
-
-        const DURATION_15_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+        const ADMIN_PASSWORD = "rennes"; // Modifiez le mot de passe admin ici si besoin
 
         const map = L.map('map').setView([48.117266, -1.677792], 14);
 
-        const osmFr = L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
             maxZoom: 20,
             attribution: '&copy; OpenStreetMap France'
-        });
+        }).addTo(map);
 
-        const esriStreet = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 19,
-            attribution: 'Tiles &copy; Esri'
-        });
-
-        osmFr.addTo(map);
-        L.control.layers({ "OpenStreetMap Fr": osmFr, "Esri Street": esriStreet }).addTo(map);
-
-        let currentMode = 'draw';
-        let currentColor = '#e74c3c';
-        let isDrawing = false;
-        let currentPolyline = null;
-        
-        let pingsData = [];
-        let drawingsData = [];
+        let signalsData = [];
         let markersMap = {};
-        let polylinesList = [];
+        let isAdminLoggedIn = false;
+        let pendingLatlng = null;
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-            if(mode === 'draw') {
-                document.querySelectorAll('.btn-mode')[0].classList.add('active');
-                document.getElementById('panel-draw').classList.add('active');
+            if (tab === 'citizen') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('tab-citizen').classList.add('active');
             } else {
-                document.querySelectorAll('.btn-mode')[1].classList.add('active');
-                document.getElementById('panel-ping').classList.add('active');
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('tab-admin').classList.add('active');
             }
         }
 
-        function setColor(color, element) {
-            currentColor = color;
-            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-            element.classList.add('active');
+        function checkAdmin() {
+            const pass = document.getElementById('admin-pass').value;
+            if (pass === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                document.getElementById('admin-login').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                renderAdminList();
+            } else {
+                alert("Mot de passe incorrect.");
+            }
         }
 
+        // Clic sur la carte pour poser un signalement
         map.on('click', function(e) {
-            if (currentMode === 'ping') {
-                addPing(e.latlng);
-            } else if (currentMode === 'draw') {
-                handleDrawing(e.latlng);
+            const desc = document.getElementById('sig-desc').value.trim();
+            const fileInput = document.getElementById('sig-photo');
+
+            if (!desc) {
+                alert("Veuillez d'abord saisir une description dans l'onglet 'Signaler'.");
+                switchTab('citizen');
+                return;
             }
+
+            if (fileInput.files.length === 0) {
+                alert("Veuillez ajouter une photo du problème.");
+                switchTab('citizen');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                // Compression de l'image en base64 via un canvas
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                    const newSignal = {
+                        id: Date.now(),
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng,
+                        desc: desc,
+                        photoBefore: compressedDataUrl,
+                        photoAfter: null,
+                        status: 'pending', // pending, validated, resolved
+                        dateAdded: new Date().toLocaleDateString('fr-FR')
+                    };
+
+                    signalsData.push(newSignal);
+                    saveToCloud();
+
+                    // Réinitialisation
+                    document.getElementById('sig-desc').value = '';
+                    fileInput.value = '';
+                    alert("Signalement envoyé avec succès ! Il est en attente de modération.");
+                };
+            };
+            reader.readAsDataURL(file);
         });
-
-        function handleDrawing(latlng) {
-            if (!isDrawing) {
-                isDrawing = true;
-                currentPolyline = L.polyline([latlng], { color: currentColor, weight: 6, opacity: 0.8 }).addTo(map);
-            } else {
-                currentPolyline.addLatLng(latlng);
-                drawingsData.push({ latlngs: currentPolyline.getLatLngs(), color: currentColor });
-                saveToCloud();
-                isDrawing = false;
-                currentPolyline = null;
-            }
-        }
-
-        function clearDrawings() {
-            if (confirm("Voulez-vous vraiment effacer tous les tracés partagés ?")) {
-                drawingsData = [];
-                saveToCloud();
-            }
-        }
 
         async function fetchFromCloud() {
             document.getElementById('sync-status').innerText = '🔄 Synchro...';
@@ -401,12 +351,11 @@
                     headers: { 'X-Master-Key': API_KEY }
                 });
                 const data = await res.json();
-                pingsData = data.record.pings || [];
-                drawingsData = data.record.drawings || [];
-                renderAllData();
+                signalsData = data.record.signals || [];
+                renderMapAndAdmin();
                 document.getElementById('sync-status').innerText = '✅ À jour';
             } catch (err) {
-                console.error("Erreur de synchronisation", err);
+                console.error(err);
                 document.getElementById('sync-status').innerText = '⚠️ Erreur synchro';
             }
         }
@@ -420,136 +369,129 @@
                         'Content-Type': 'application/json',
                         'X-Master-Key': API_KEY
                     },
-                    body: JSON.stringify({ pings: pingsData, drawings: drawingsData })
+                    body: JSON.stringify({ signals: signalsData })
                 });
                 document.getElementById('sync-status').innerText = '✅ Sauvegardé';
-                renderAllData();
+                renderMapAndAdmin();
             } catch (err) {
-                console.error("Erreur d'enregistrement", err);
+                console.error(err);
                 document.getElementById('sync-status').innerText = '⚠️ Erreur sauvegarde';
             }
         }
 
-        function addPing(latlng) {
-            const msg = document.getElementById('ping-msg').value.trim();
-            if (!msg) {
-                alert("Veuillez saisir un nom ou message pour le panneau.");
-                return;
+        function updateSignalStatus(id, newStatus) {
+            const sig = signalsData.find(s => s.id === id);
+            if (sig) {
+                sig.status = newStatus;
+                saveToCloud();
             }
+        }
 
-            const pingObj = {
-                id: Date.now(),
-                lat: latlng.lat,
-                lng: latlng.lng,
-                msg: msg,
-                dateAdded: new Date().toLocaleDateString('fr-FR'),
-                colleUntil: null
+        function addAfterPhoto(id) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * (MAX_WIDTH / img.width);
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        const sig = signalsData.find(s => s.id === id);
+                        if (sig) {
+                            sig.photoAfter = canvas.toDataURL('image/jpeg', 0.7);
+                            sig.status = 'resolved';
+                            saveToCloud();
+                        }
+                    };
+                };
+                reader.readAsDataURL(file);
             };
-
-            pingsData.push(pingObj);
-            saveToCloud();
-            document.getElementById('ping-msg').value = '';
+            input.click();
         }
 
-        function deletePing(id) {
-            if (confirm("Voulez-vous vraiment supprimer ce panneau ?")) {
-                pingsData = pingsData.filter(p => p.id !== id);
+        function deleteSignal(id) {
+            if (confirm("Supprimer ce signalement ?")) {
+                signalsData = signalsData.filter(s => s.id !== id);
                 saveToCloud();
             }
         }
 
-        function validateColle(id) {
-            const ping = pingsData.find(p => p.id === id);
-            if (ping) {
-                ping.colleUntil = Date.now() + DURATION_15_DAYS_MS;
-                saveToCloud();
-            }
-        }
-
-        function getStatusInfo(ping) {
-            if (!ping.colleUntil) {
-                return { status: 'expired', label: '⚠️ À recoller (Non validé)', cardClass: 'status-expired', img: 'pouting-Lisnard.png' };
-            }
-            const now = Date.now();
-            const diffMs = ping.colleUntil - now;
-            
-            if (diffMs > 0) {
-                const daysLeft = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                const hoursLeft = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                return { status: 'valid', label: `✅ Affiche collée (${daysLeft}j ${hoursLeft}h restants)`, cardClass: 'status-valid', img: 'Smiling-Lisnard.png' };
-            } else {
-                return { status: 'expired', label: '⚠️ À recoller (Expiré)', cardClass: 'status-expired', img: 'pouting-Lisnard.png' };
-            }
-        }
-
-        function buildPopupHtml(ping) {
-            const statusInfo = getStatusInfo(ping);
-            let actionBtn = (statusInfo.status === 'valid') 
-                ? `<button class="btn-action btn-refresh" onclick="validateColle(${ping.id})">🔄 Relancer (+15j)</button>`
-                : `<button class="btn-action btn-colle" onclick="validateColle(${ping.id})">📌 Affiche collée</button>`;
-
-            return `
-                <div class="popup-content">
-                    <p><b>🪧 Panneau :</b><br>${ping.msg}</p>
-                    <p style="font-size:0.8rem; color:#555;">${statusInfo.label}</p>
-                    <div style="display:flex; gap:5px; margin-top:8px;">
-                        ${actionBtn}
-                        <button class="btn-action btn-delete" onclick="deletePing(${ping.id})">🗑️</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderAllData() {
+        function renderMapAndAdmin() {
+            // Nettoyage des marqueurs
             Object.values(markersMap).forEach(m => map.removeLayer(m));
             markersMap = {};
 
-            polylinesList.forEach(p => map.removeLayer(p));
-            polylinesList = [];
+            // Affichage des signalements validés ou résolus sur la carte pour tout le monde
+            signalsData.forEach(sig => {
+                if (sig.status !== 'pending' || isAdminLoggedIn) {
+                    let color = '#f39c12'; // pending
+                    if (sig.status === 'validated') color = '#27ae60';
+                    if (sig.status === 'resolved') color = '#2980b9';
 
-            drawingsData.forEach(d => {
-                const line = L.polyline(d.latlngs, { color: d.color, weight: 6, opacity: 0.8 }).addTo(map);
-                polylinesList.push(line);
+                    const iconHtml = `<div style="background:${color}; width:30px; height:30px; border-radius:50%; text-align:center; line-height:30px; color:white; font-size:14px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">📷</div>`;
+                    const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [30, 30] });
+
+                    let imgContainer = `<div style="margin-top:8px;"><p><b>Avant :</b></p><img src="${sig.photoBefore}" style="width:100%; height:120px; object-fit:cover; border-radius:4px;"></div>`;
+                    if (sig.photoAfter) {
+                        imgContainer += `<div style="margin-top:8px;"><p><b>Après intervention :</b></p><img src="${sig.photoAfter}" style="width:100%; height:120px; object-fit:cover; border-radius:4px;"></div>`;
+                    }
+
+                    const popupHtml = `
+                        <div style="max-width: 200px;">
+                            <span style="font-size:0.75rem; font-weight:bold; color:${color};">[${sig.status.toUpperCase()}]</span>
+                            <p style="margin: 5px 0; font-size: 0.9rem;">${sig.desc}</p>
+                            ${imgContainer}
+                        </div>
+                    `;
+
+                    const marker = L.marker([sig.lat, sig.lng], { icon: customIcon }).addTo(map);
+                    marker.bindPopup(popupHtml);
+                    markersMap[sig.id] = marker;
+                }
             });
 
-            pingsData.forEach(ping => {
-                const statusInfo = getStatusInfo(ping);
-                
-                const iconHtml = `<img src="${statusInfo.img}" class="marker-icon-img" alt="Panneau">`;
-                const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [38, 38], iconAnchor: [19, 19] });
+            if (isAdminLoggedIn) {
+                renderAdminList();
+            }
+        }
 
-                const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
-                marker.bindPopup(buildPopupHtml(ping));
-                markersMap[ping.id] = marker;
-            });
-
-            const list = document.getElementById('board-list');
+        function renderAdminList() {
+            const list = document.getElementById('admin-list');
             list.innerHTML = '';
-            
-            if (pingsData.length === 0) {
-                list.innerHTML = '<p style="color:#888; font-size:0.85rem;">Aucun panneau posé pour le moment.</p>';
+
+            if (signalsData.length === 0) {
+                list.innerHTML = '<p style="color:#888; font-size:0.85rem;">Aucun signalement pour le moment.</p>';
                 return;
             }
 
-            pingsData.slice().reverse().forEach(ping => {
-                const statusInfo = getStatusInfo(ping);
+            signalsData.slice().reverse().forEach(sig => {
                 const card = document.createElement('div');
-                card.className = `ping-card ${statusInfo.cardClass}`;
+                card.className = `signal-card ${sig.status}`;
                 
-                let actionBtnHtml = (statusInfo.status === 'valid')
-                    ? `<button class="btn-action btn-refresh" onclick="validateColle(${ping.id})">🔄 Relancer (+15j)</button>`
-                    : `<button class="btn-action btn-colle" onclick="validateColle(${ping.id})">📌 Affiche collée</button>`;
+                let actions = '';
+                if (sig.status === 'pending') {
+                    actions += `<button class="btn-action btn-validate" onclick="updateSignalStatus(${sig.id}, 'validated')">Valider</button>`;
+                }
+                if (sig.status !== 'resolved') {
+                    actions += `<button class="btn-action btn-resolve" onclick="addAfterPhoto(${sig.id})">Ajouter Après</button>`;
+                }
+                actions += `<button class="btn-action btn-delete" onclick="deleteSignal(${sig.id})">Supprimer</button>`;
 
                 card.innerHTML = `
-                    <div class="ping-header">
-                        <span>Créé le ${ping.dateAdded}</span>
-                    </div>
-                    <p><b>🪧</b> ${ping.msg}</p>
-                    <div class="status-badge ${statusInfo.status}">${statusInfo.label}</div>
-                    <div class="card-actions">
-                        ${actionBtnHtml}
-                        <button class="btn-action btn-delete" onclick="deletePing(${ping.id})">🗑️ Supprimer</button>
-                    </div>
+                    <p style="font-size:0.8rem; color:#666;">Statut : <b>${sig.status}</b> (${sig.dateAdded})</p>
+                    <p style="margin: 5px 0; font-weight:600;">${sig.desc}</p>
+                    <img src="${sig.photoBefore}" alt="Avant">
+                    ${sig.photoAfter ? '<p style="margin-top:5px; font-size:0.8rem; font-weight:bold; color:#2980b9;">Photo "Après" ajoutée ✅</p>' : ''}
+                    <div class="card-actions">${actions}</div>
                 `;
                 list.appendChild(card);
             });
