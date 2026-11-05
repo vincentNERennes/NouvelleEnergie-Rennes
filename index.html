@@ -198,6 +198,30 @@
             cursor: pointer;
         }
 
+        /* Bouton de géolocalisation sur la carte */
+        .geo-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 6px;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .geo-btn:hover {
+            background: #f4f6f9;
+        }
+
         /* ================= MEDIA QUERIES (OPTIMISATION MOBILE) ================= */
         @media (max-width: 768px) {
             body {
@@ -229,6 +253,11 @@
             .mobile-toggle-btn {
                 display: block;
             }
+
+            .geo-btn {
+                top: 15px;
+                right: 15px;
+            }
         }
     </style>
 </head>
@@ -236,6 +265,9 @@
 
     <!-- Bouton flottant mobile pour ouvrir/fermer le panneau -->
     <button class="mobile-toggle-btn" id="toggle-btn" onclick="toggleMobileSidebar()">📜 Panneau / Formulaire</button>
+
+    <!-- Bouton de géolocalisation sur la carte -->
+    <button class="geo-btn" onclick="locateUser()" title="Me géolocaliser">📍</button>
 
     <div id="sidebar">
         <!-- En-tête avec logo et mention Énergisons Rennes -->
@@ -301,6 +333,38 @@
         let markersMap = {};
         let isAdminLoggedIn = false;
         let isSidebarOpen = true;
+        let userMarker = null;
+
+        function locateUser() {
+            if (!navigator.geolocation) {
+                alert("La géolocalisation n'est pas supportée par votre navigateur.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    map.setView([lat, lng], 17);
+
+                    if (userMarker) {
+                        map.removeLayer(userMarker);
+                    }
+
+                    // Ajout d'un marqueur distinctif pour la position de l'utilisateur
+                    const userIconHtml = `<div style="background:#3498db; width:18px; height:18px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.4);"></div>`;
+                    const userIcon = L.divIcon({ html: userIconHtml, className: '', iconSize: [18, 18] });
+
+                    userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
+                    userMarker.bindPopup("<b>Vous êtes ici 📍</b>").openPopup();
+                },
+                () => {
+                    alert("Impossible de récupérer votre position. Vérifiez vos paramètres GPS.");
+                },
+                { enableHighAccuracy: true }
+            );
+        }
 
         function toggleMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
