@@ -2,8 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signalements Rennes - Citoyens & Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Signalements Rennes - Mobile Friendly</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -17,34 +17,36 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
             background-color: #f4f6f9;
         }
 
-        /* Sidebar Styles */
+        /* Sidebar par défaut (Bureau) */
         #sidebar {
-            width: 420px;
+            width: 400px;
             background: #ffffff;
             display: flex;
             flex-direction: column;
             box-shadow: 2px 0 12px rgba(0,0,0,0.1);
             z-index: 1000;
+            height: 100vh;
         }
 
         .header {
-            padding: 15px 20px;
+            padding: 12px 15px;
             background: #2c3e50;
             color: white;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 1.2rem;
-            margin-bottom: 4px;
+            font-size: 1.1rem;
+            margin-bottom: 2px;
         }
 
         .header p {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #bdc3c7;
         }
 
@@ -61,7 +63,7 @@
             color: white;
             font-weight: bold;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: background 0.2s;
         }
 
@@ -73,7 +75,7 @@
             display: none;
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 15px;
             background: #fafafa;
         }
 
@@ -83,20 +85,21 @@
         }
 
         label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #333;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: block;
         }
 
         input[type="text"], input[type="password"], textarea, input[type="file"] {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 8px;
+            margin-bottom: 12px;
             border: 1px solid #ccc;
             border-radius: 6px;
             font-family: inherit;
+            font-size: 0.9rem;
         }
 
         .btn-primary {
@@ -117,9 +120,9 @@
         /* Liste des signalements */
         .signal-card {
             background: white;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
             border-left: 5px solid #f39c12;
         }
@@ -134,20 +137,20 @@
 
         .signal-card img {
             width: 100%;
-            height: 140px;
+            height: 120px;
             object-fit: cover;
             border-radius: 4px;
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .card-actions {
             display: flex;
             gap: 6px;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .btn-action {
-            padding: 6px 10px;
+            padding: 6px 8px;
             font-size: 0.75rem;
             border: none;
             border-radius: 4px;
@@ -167,35 +170,68 @@
         }
 
         .sync-status {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #f1c40f;
             text-align: center;
-            padding: 5px;
+            padding: 4px;
             background: #1a252f;
         }
 
-        .popup-img-container {
-            display: flex;
-            gap: 5px;
-            margin-top: 8px;
+        /* Bouton pour basculer la vue sur mobile */
+        .mobile-toggle-btn {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
 
-        .popup-img-container div {
-            flex: 1;
-            text-align: center;
-            font-size: 0.75rem;
-            color: #555;
-        }
+        /* ================= MEDIA QUERIES (OPTIMISATION MOBILE) ================= */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
 
-        .popup-img-container img {
-            width: 100%;
-            height: 90px;
-            object-fit: cover;
-            border-radius: 4px;
+            #sidebar {
+                width: 100%;
+                height: 45vh; /* Le panneau prend la moitié haute/basse en mode mobile */
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                transition: transform 0.3s ease-in-out;
+                z-index: 3000;
+                border-top-left-radius: 16px;
+                border-top-right-radius: 16px;
+                box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
+            }
+
+            #sidebar.minimized {
+                transform: translateY(calc(100% - 55px)); /* Laisse dépasser juste l'en-tête/onglets */
+            }
+
+            #map {
+                height: 100vh;
+                width: 100vw;
+            }
+
+            .mobile-toggle-btn {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
+
+    <!-- Bouton flottant mobile pour ouvrir/fermer le panneau -->
+    <button class="mobile-toggle-btn" id="toggle-btn" onclick="toggleMobileSidebar()">📜 Panneau / Formulaire</button>
 
     <div id="sidebar">
         <div class="header">
@@ -211,30 +247,28 @@
 
         <!-- Onglet Citoyen -->
         <div id="tab-citizen" class="tab-content active">
-            <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
-                Vous avez repéré un tag, un mobilier urbain dégradé ou un dysfonctionnement ? Remplissez le formulaire puis <b>cliquez sur l'emplacement exact sur la carte</b>.
+            <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">
+                1. Décrivez le problème.<br>2. Prenez/choisissez une photo.<br>3. <b>Cliquez sur l'endroit exact sur la carte.</b>
             </p>
-            <label for="sig-desc">Description du problème :</label>
-            <textarea id="sig-desc" rows="3" placeholder="Ex: Tag injurieux sur mur, abribus cassé..."></textarea>
+            <label for="sig-desc">Description :</label>
+            <textarea id="sig-desc" rows="2" placeholder="Ex: Tag, abribus cassé..."></textarea>
 
-            <label for="sig-photo">Photo du problème :</label>
+            <label for="sig-photo">Photo :</label>
             <input type="file" id="sig-photo" accept="image/*">
 
-            <div style="background: #e8f8f5; padding: 10px; border-radius: 6px; font-size: 0.8rem; color: #16a085; margin-top: 10px;">
-                ℹ️ Votre signalement sera soumis à validation avant d'apparaître publiquement sur la carte.
-            </div>
+            <button class="btn-primary" onclick="alert('Formulaire prêt ! Réduisez ce panneau et cliquez sur la carte pour poser votre signalement.')" style="margin-top: 5px; font-size: 0.85rem; padding: 8px;">Prêt à placer sur la carte 📍</button>
         </div>
 
         <!-- Onglet Admin -->
         <div id="tab-admin" class="tab-content">
             <div id="admin-login">
-                <label for="admin-pass">Mot de passe administrateur :</label>
-                <input type="password" id="admin-pass" placeholder="Entrez le mot de passe">
+                <label for="admin-pass">Mot de passe admin :</label>
+                <input type="password" id="admin-pass" placeholder="Mot de passe">
                 <button class="btn-primary" onclick="checkAdmin()">Se connecter</button>
             </div>
 
             <div id="admin-panel" style="display:none;">
-                <h3 style="font-size: 1rem; margin-bottom: 10px; color: #2c3e50;">Modération des signalements</h3>
+                <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: #2c3e50;">Modération</h3>
                 <div id="admin-list"></div>
             </div>
         </div>
@@ -247,7 +281,7 @@
     <script>
         const BIN_ID = "6ae3ce5bffd5d16053971b9e";
         const API_KEY = "$2a$10$CgKC3W5/qiItbMUXH6igROL45Kq7W1XE33Mpx7VIplJ87fKCP9Csa";
-        const ADMIN_PASSWORD = "rennes"; // Modifiez le mot de passe admin ici si besoin
+        const ADMIN_PASSWORD = "rennes";
 
         const map = L.map('map').setView([48.117266, -1.677792], 14);
 
@@ -259,7 +293,19 @@
         let signalsData = [];
         let markersMap = {};
         let isAdminLoggedIn = false;
-        let pendingLatlng = null;
+        let isSidebarOpen = true;
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            isSidebarOpen = !isSidebarOpen;
+            if (isSidebarOpen) {
+                sidebar.classList.remove('minimized');
+                document.getElementById('toggle-btn').innerText = '🔽 Masquer panneau';
+            } else {
+                sidebar.classList.add('minimized');
+                document.getElementById('toggle-btn').innerText = '📜 Ouvrir panneau / formulaire';
+            }
+        }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -272,6 +318,11 @@
                 document.querySelectorAll('.tab-btn')[1].classList.add('active');
                 document.getElementById('tab-admin').classList.add('active');
             }
+            // Ouvrir automatiquement le panneau si on clique sur un onglet
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.remove('minimized');
+            isSidebarOpen = true;
+            document.getElementById('toggle-btn').innerText = '🔽 Masquer panneau';
         }
 
         function checkAdmin() {
@@ -286,19 +337,19 @@
             }
         }
 
-        // Clic sur la carte pour poser un signalement
+        // Clic sur la carte pour poster un signalement
         map.on('click', function(e) {
             const desc = document.getElementById('sig-desc').value.trim();
             const fileInput = document.getElementById('sig-photo');
 
             if (!desc) {
-                alert("Veuillez d'abord saisir une description dans l'onglet 'Signaler'.");
+                alert("Veuillez d'abord saisir une description.");
                 switchTab('citizen');
                 return;
             }
 
             if (fileInput.files.length === 0) {
-                alert("Veuillez ajouter une photo du problème.");
+                alert("Veuillez ajouter une photo.");
                 switchTab('citizen');
                 return;
             }
@@ -307,7 +358,6 @@
             const reader = new FileReader();
             
             reader.onload = function(event) {
-                // Compression de l'image en base64 via un canvas
                 const img = new Image();
                 img.src = event.target.result;
                 img.onload = function() {
@@ -328,17 +378,21 @@
                         desc: desc,
                         photoBefore: compressedDataUrl,
                         photoAfter: null,
-                        status: 'pending', // pending, validated, resolved
+                        status: 'pending',
                         dateAdded: new Date().toLocaleDateString('fr-FR')
                     };
 
                     signalsData.push(newSignal);
                     saveToCloud();
 
-                    // Réinitialisation
                     document.getElementById('sig-desc').value = '';
                     fileInput.value = '';
-                    alert("Signalement envoyé avec succès ! Il est en attente de modération.");
+                    alert("Signalement envoyé avec succès ! En attente de validation.");
+                    
+                    // Sur mobile, replier automatiquement le panneau pour voir la carte
+                    if (window.innerWidth <= 768) {
+                        toggleMobileSidebar();
+                    }
                 };
             };
             reader.readAsDataURL(file);
@@ -426,29 +480,27 @@
         }
 
         function renderMapAndAdmin() {
-            // Nettoyage des marqueurs
             Object.values(markersMap).forEach(m => map.removeLayer(m));
             markersMap = {};
 
-            // Affichage des signalements validés ou résolus sur la carte pour tout le monde
             signalsData.forEach(sig => {
                 if (sig.status !== 'pending' || isAdminLoggedIn) {
-                    let color = '#f39c12'; // pending
+                    let color = '#f39c12';
                     if (sig.status === 'validated') color = '#27ae60';
                     if (sig.status === 'resolved') color = '#2980b9';
 
-                    const iconHtml = `<div style="background:${color}; width:30px; height:30px; border-radius:50%; text-align:center; line-height:30px; color:white; font-size:14px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">📷</div>`;
-                    const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [30, 30] });
+                    const iconHtml = `<div style="background:${color}; width:28px; height:28px; border-radius:50%; text-align:center; line-height:28px; color:white; font-size:13px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">📷</div>`;
+                    const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [28, 28] });
 
-                    let imgContainer = `<div style="margin-top:8px;"><p><b>Avant :</b></p><img src="${sig.photoBefore}" style="width:100%; height:120px; object-fit:cover; border-radius:4px;"></div>`;
+                    let imgContainer = `<div style="margin-top:6px;"><p><b>Avant :</b></p><img src="${sig.photoBefore}" style="width:100%; height:100px; object-fit:cover; border-radius:4px;"></div>`;
                     if (sig.photoAfter) {
-                        imgContainer += `<div style="margin-top:8px;"><p><b>Après intervention :</b></p><img src="${sig.photoAfter}" style="width:100%; height:120px; object-fit:cover; border-radius:4px;"></div>`;
+                        imgContainer += `<div style="margin-top:6px;"><p><b>Après intervention :</b></p><img src="${sig.photoAfter}" style="width:100%; height:100px; object-fit:cover; border-radius:4px;"></div>`;
                     }
 
                     const popupHtml = `
-                        <div style="max-width: 200px;">
-                            <span style="font-size:0.75rem; font-weight:bold; color:${color};">[${sig.status.toUpperCase()}]</span>
-                            <p style="margin: 5px 0; font-size: 0.9rem;">${sig.desc}</p>
+                        <div style="max-width: 180px;">
+                            <span style="font-size:0.7rem; font-weight:bold; color:${color};">[${sig.status.toUpperCase()}]</span>
+                            <p style="margin: 4px 0; font-size: 0.85rem;">${sig.desc}</p>
                             ${imgContainer}
                         </div>
                     `;
@@ -469,7 +521,7 @@
             list.innerHTML = '';
 
             if (signalsData.length === 0) {
-                list.innerHTML = '<p style="color:#888; font-size:0.85rem;">Aucun signalement pour le moment.</p>';
+                list.innerHTML = '<p style="color:#888; font-size:0.85rem;">Aucun signalement.</p>';
                 return;
             }
 
@@ -487,10 +539,10 @@
                 actions += `<button class="btn-action btn-delete" onclick="deleteSignal(${sig.id})">Supprimer</button>`;
 
                 card.innerHTML = `
-                    <p style="font-size:0.8rem; color:#666;">Statut : <b>${sig.status}</b> (${sig.dateAdded})</p>
-                    <p style="margin: 5px 0; font-weight:600;">${sig.desc}</p>
+                    <p style="font-size:0.75rem; color:#666;">Statut : <b>${sig.status}</b> (${sig.dateAdded})</p>
+                    <p style="margin: 4px 0; font-weight:600; font-size:0.85rem;">${sig.desc}</p>
                     <img src="${sig.photoBefore}" alt="Avant">
-                    ${sig.photoAfter ? '<p style="margin-top:5px; font-size:0.8rem; font-weight:bold; color:#2980b9;">Photo "Après" ajoutée ✅</p>' : ''}
+                    ${sig.photoAfter ? '<p style="margin-top:4px; font-size:0.75rem; font-weight:bold; color:#2980b9;">Photo "Après" ajoutée ✅</p>' : ''}
                     <div class="card-actions">${actions}</div>
                 `;
                 list.appendChild(card);
