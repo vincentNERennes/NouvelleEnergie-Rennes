@@ -473,57 +473,33 @@
             Object.values(markersMap).forEach(m => map.removeLayer(m));
             markersMap = {};
 
-            pingsData.forEach(ping => {
-                let color = '#e74c3c';
-                if (ping.status === 'assigned') color = '#27ae60';
+            // Les pings ne s'affichent sur la carte que si l'administrateur est connecté
+            if (isAdminLoggedIn) {
+                pingsData.forEach(ping => {
+                    let color = '#e74c3c';
+                    if (ping.status === 'assigned') color = '#27ae60';
 
-                const iconHtml = `<div style="background:${color}; width:28px; height:28px; border-radius:50%; text-align:center; line-height:28px; color:white; font-size:13px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">📍</div>`;
-                const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [28, 28] });
+                    const iconHtml = `<div style="background:${color}; width:28px; height:28px; border-radius:50%; text-align:center; line-height:28px; color:white; font-size:13px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">📍</div>`;
+                    const customIcon = L.divIcon({ html: iconHtml, className: '', iconSize: [28, 28] });
 
-                const popupHtml = `
-                    <div style="max-width: 180px;">
-                        <p style="font-size:0.8rem; font-weight:bold; color:${color};">👤 ${ping.pseudo}</p>
-                        ${isAdminLoggedIn ? `
+                    const popupHtml = `
+                        <div style="max-width: 180px;">
+                            <p style="font-size:0.8rem; font-weight:bold; color:${color};">👤 ${ping.pseudo}</p>
                             <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
                                 <button onclick="togglePingStatus(${ping.id})" style="background:${ping.status === 'pending' ? '#27ae60' : '#e74c3c'}; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">${ping.status === 'pending' ? 'Marquer Trajet OK' : 'Remettre en rouge'}</button>
                                 <button onclick="deletePing(${ping.id})" style="background:#e74c3c; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">🗑️ Supprimer</button>
                             </div>
-                        ` : ''}
-                    </div>
-                `;
+                        </div>
+                    `;
 
-                const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
-                marker.bindPopup(popupHtml);
+                    const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
+                    marker.bindPopup(popupHtml);
 
-                markersMap[ping.id] = marker;
-            });
+                    markersMap[ping.id] = marker;
+                });
 
-            if (isAdminLoggedIn) {
                 renderAdminList();
             }
-        }
-
-        function renderAdminList() {
-            const list = document.getElementById('admin-list');
-            list.innerHTML = '';
-
-            if (pingsData.length === 0) {
-                list.innerHTML = '<p style="color:#888; font-size:0.85rem;">Aucun point actif.</p>';
-                return;
-            }
-
-            pingsData.slice().reverse().forEach(ping => {
-                const card = document.createElement('div');
-                card.className = `ping-card ${ping.status}`;
-                card.innerHTML = `
-                    <p style="font-size:0.75rem; color:#666;"><b>${ping.pseudo}</b> (${ping.dateAdded})</p>
-                    <div style="display:flex; gap:5px; margin-top:5px;">
-                        <button onclick="togglePingStatus(${ping.id})" class="btn-primary" style="padding:4px 8px; font-size:0.75rem; flex:1;">Changer couleur</button>
-                        <button onclick="deletePing(${ping.id})" class="btn-danger" style="margin-top:0;">Supprimer</button>
-                    </div>
-                `;
-                list.appendChild(card);
-            });
         }
 
         fetchFromCloud();
